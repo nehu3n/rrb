@@ -10,3 +10,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.5.23", features = ["derive"] }
+cliclack = "0.3.5"
+serenity = { version = "0.12.4", features = ["cache", "model"] }
+tokio = { version = "1.42.0", features = ["full"] }
