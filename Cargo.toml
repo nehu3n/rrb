@@ -1,0 +1,11 @@
+[package]
+name = "rrb"
+description = "Rusty raid bot tool for Discord"
+authors = ["Nehuén <https://github.com/nehu3n>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/nehu3n/rrb"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
