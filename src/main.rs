@@ -3,14 +3,20 @@ mod tasks;
 use clap::Parser;
 use cliclack::{self};
 use colored::Colorize;
+use once_cell::sync::Lazy;
+use rand::{seq::SliceRandom, thread_rng};
 use serenity::{
     all::{
-        ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, OnlineStatus,
-        Ready,
+        ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, HttpBuilder,
+        OnlineStatus, Ready,
     },
     async_trait,
 };
-use std::sync::{Arc, RwLock};
+use sled::Db;
+use std::{
+    path::Path,
+    sync::{Arc, RwLock},
+};
 
 #[derive(Parser)]
 struct Args {
@@ -43,31 +49,82 @@ Made by Nehuén <https://github.com/nehu3n>
 
 struct ProxyManager {
     proxies: Arc<RwLock<Vec<String>>>,
+    db: Arc<ProxyDatabase>,
 }
 
 impl ProxyManager {
-    fn new() -> Self {
-        Self {
-            proxies: Arc::new(RwLock::new(Vec::new())),
+    fn new() -> Result<Self, sled::Error> {
+        let db = Arc::new(ProxyDatabase::new()?);
+        let proxies = Arc::new(RwLock::new(Vec::new()));
+
+        if let Ok(initial_proxies) = db.get_all_proxies() {
+            let mut proxies_write = proxies.write().unwrap();
+            *proxies_write = initial_proxies;
         }
+
+        Ok(Self { proxies, db })
     }
 
     async fn get_next_proxy(&self) -> Option<String> {
-        let mut proxies = self.proxies.write().unwrap();
-        if proxies.is_empty() {
-            None
-        } else {
-            let proxy = proxies.remove(0);
-            proxies.push(proxy.clone());
-            Some(proxy)
-        }
+        let proxies = self.proxies.read().unwrap();
+        proxies.choose(&mut thread_rng()).cloned()
     }
 
-    async fn update_proxies(&self, new_proxies: Vec<String>) {
+
+    async fn add_proxy(&self, proxy: String) -> Result<(), sled::Error> {
+        self.db.add_proxy(&proxy)?;
         let mut proxies = self.proxies.write().unwrap();
-        *proxies = new_proxies;
+        proxies.push(proxy);
+        Ok(())
+    }
+
+    async fn get_all_proxies(&self) -> Vec<String> {
+        let proxies = self.proxies.read().unwrap();
+        proxies.clone()
+    }
+
+    async fn shuffle_proxies(&self) {
+        let mut proxies = self.proxies.write().unwrap();
+        proxies.shuffle(&mut thread_rng());
     }
 }
+
+struct ProxyDatabase {
+    db: Db,
+}
+
+impl ProxyDatabase {
+    fn new() -> Result<Self, sled::Error> {
+        let db = sled::open(Path::new("proxy_db"))?;
+        Ok(Self { db })
+    }
+
+    fn add_proxy(&self, proxy: &str) -> Result<(), sled::Error> {
+        self.db.insert(proxy, &[])?;
+        self.db.flush()?;
+        Ok(())
+    }
+
+    fn get_all_proxies(&self) -> Result<Vec<String>, sled::Error> {
+        let proxies: Vec<String> = self
+            .db
+            .iter()
+            .filter_map(|item| {
+                item.ok()
+                    .map(|(key, _)| String::from_utf8_lossy(&key).into_owned())
+            })
+            .collect();
+        Ok(proxies)
+    }
+
+    fn remove_proxy(&self, proxy: &str) -> Result<(), sled::Error> {
+        self.db.remove(proxy)?;
+        self.db.flush()?;
+        Ok(())
+    }
+}
+
+static PROXY_MANAGER: Lazy<ProxyManager> = Lazy::new(|| ProxyManager::new().unwrap());
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -92,7 +149,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         token
     };
 
-    let mut client = ClientBuilder::new(token, GatewayIntents::all())
+    PROXY_MANAGER.shuffle_proxies().await;
+    let proxies = PROXY_MANAGER.get_all_proxies().await;
+
+    let mut http = HttpBuilder::new(&token).ratelimiter_disabled(true);
+
+    if !proxies.is_empty() {
+        http = http.proxy(PROXY_MANAGER.get_next_proxy().await.unwrap());
+    }
+
+    let mut client = ClientBuilder::new_with_http(http.build(), GatewayIntents::all())
         .status(OnlineStatus::Offline)
         .event_handler(Handler)
         .await
@@ -173,34 +239,42 @@ impl EventHandler for Handler {
                             .interact()
                             .unwrap();
 
-                        fn add_proxy() {
-                            let new_proxy = cliclack::input("Enter new proxy")
-                                .interact::<String>()
-                                .unwrap();
+                        fn add_proxy(
+                        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+                        {
+                            Box::pin(async {
+                                let new_proxy = cliclack::input("Enter new proxy")
+                                    .interact::<String>()
+                                    .unwrap();
 
-                            // TODO: add proxy
+                                PROXY_MANAGER.add_proxy(new_proxy).await.unwrap();
 
-                            cliclack::log::success("Proxy added successfully!").unwrap();
-                            let back = cliclack::confirm("Back to menu?").interact().unwrap();
+                                cliclack::log::success("Proxy added successfully!").unwrap();
+                                let back = cliclack::confirm("Back to menu?").interact().unwrap();
 
-                            if back {
-                            } else {
-                                let other_proxy =
-                                    cliclack::confirm("Do you want to add another proxy?")
-                                        .interact()
-                                        .unwrap();
-                                if other_proxy {
-                                    add_proxy();
+                                if !back {
+                                    let other_proxy =
+                                        cliclack::confirm("Do you want to add another proxy?")
+                                            .interact()
+                                            .unwrap();
+                                    if other_proxy {
+                                        add_proxy().await;
+                                    }
                                 }
-                            }
+                            })
                         }
 
                         match proxy_action {
                             "view" => {
-                                // TODO: view proxies
+                                let proxies = PROXY_MANAGER.get_all_proxies().await;
+
+                                for proxy in proxies {
+                                    cliclack::log::info(proxy.bold()).unwrap();
+                                }
+
                                 cliclack::confirm("Back to menu?").interact().unwrap();
                             }
-                            "add" => add_proxy(),
+                            "add" => add_proxy().await,
                             _ => {}
                         }
                     }
