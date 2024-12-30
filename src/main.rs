@@ -164,7 +164,7 @@ impl EventHandler for Handler {
 
                             // TODO: add proxy
 
-                            println!("Proxy added successfully!");
+                            cliclack::log::success("Proxy added successfully!").unwrap();
                             let back = cliclack::confirm("Back to menu?").interact().unwrap();
 
                             if back {
