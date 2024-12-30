@@ -5,7 +5,10 @@ use cliclack;
 use colored::Colorize;
 use crossterm::terminal;
 use serenity::{
-    all::{ClientBuilder, Context, EventHandler, GatewayIntents, GuildId, OnlineStatus, Ready},
+    all::{
+        ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, OnlineStatus,
+        Ready,
+    },
     async_trait,
 };
 
@@ -168,6 +171,9 @@ impl EventHandler for Handler {
                     let name = cliclack::input("Enter guild name")
                         .interact::<String>()
                         .unwrap();
+
+                    let guild_builder = EditGuild::new().name(name);
+                    guild_id.edit(&ctx.http, guild_builder).await.unwrap();
                 }
                 "spam_msg" => {
                     let name = cliclack::input("Enter spam message")
