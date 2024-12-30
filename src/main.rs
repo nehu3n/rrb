@@ -158,8 +158,12 @@ impl EventHandler for Handler {
                 "delete_rl" => {
                     tasks::delete_roles(&ctx, guild_id).await;
                 }
-                "ban_all" => {}
-                "kick_all" => {}
+                "ban_all" => {
+                    tasks::ban_all(&ctx, guild_id).await;
+                }
+                "kick_all" => {
+                    tasks::kick_all(&ctx, guild_id).await;
+                }
                 "change_name" => {
                     let name = cliclack::input("Enter guild name")
                         .interact::<String>()
