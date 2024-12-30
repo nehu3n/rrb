@@ -145,7 +145,54 @@ impl EventHandler for Handler {
                 .unwrap();
 
             if menu == "config" {
-                // TODO: config
+                let config_option = cliclack::select("Config")
+                    .items(&[("proxies", "Proxies", ""), ("tokens", "Tokens", "")])
+                    .interact()
+                    .unwrap();
+
+                match config_option {
+                    "proxies" => {
+                        let proxy_action = cliclack::select("Proxy Management")
+                            .items(&[("view", "View proxies", ""), ("add", "Add proxy", "")])
+                            .interact()
+                            .unwrap();
+
+                        fn add_proxy() {
+                            let new_proxy = cliclack::input("Enter new proxy")
+                                .interact::<String>()
+                                .unwrap();
+
+                            // TODO: add proxy
+
+                            println!("Proxy added successfully!");
+                            let back = cliclack::confirm("Back to menu?").interact().unwrap();
+
+                            if back {
+                            } else {
+                                let other_proxy =
+                                    cliclack::confirm("Do you want to add another proxy?")
+                                        .interact()
+                                        .unwrap();
+                                if other_proxy {
+                                    add_proxy();
+                                }
+                            }
+                        }
+
+                        match proxy_action {
+                            "view" => {
+                                // TODO: view proxies
+                                cliclack::confirm("Back to menu?").interact().unwrap();
+                            }
+                            "add" => add_proxy(),
+                            _ => {}
+                        }
+                    }
+                    "tokens" => {
+                        // TODO: tokens
+                    }
+                    _ => {}
+                }
             } else {
                 let task = cliclack::select("Select a task")
                     .items(&TASKS)
