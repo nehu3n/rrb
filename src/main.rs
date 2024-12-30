@@ -1,10 +1,10 @@
 mod tasks;
+mod config;
 
 use clap::Parser;
 use cliclack::{self};
 use colored::Colorize;
 use once_cell::sync::Lazy;
-use rand::{seq::SliceRandom, thread_rng};
 use serenity::{
     all::{
         ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, HttpBuilder,
@@ -12,11 +12,8 @@ use serenity::{
     },
     async_trait,
 };
-use sled::Db;
-use std::{
-    path::Path,
-    sync::{Arc, RwLock},
-};
+
+use config::proxy::PROXY_MANAGER;
 
 #[derive(Parser)]
 struct Args {
@@ -47,83 +44,6 @@ Made by Nehuén <https://github.com/nehu3n>
     );
 }
 
-struct ProxyManager {
-    proxies: Arc<RwLock<Vec<String>>>,
-    db: Arc<ProxyDatabase>,
-}
-
-impl ProxyManager {
-    fn new() -> Result<Self, sled::Error> {
-        let db = Arc::new(ProxyDatabase::new()?);
-        let proxies = Arc::new(RwLock::new(Vec::new()));
-
-        if let Ok(initial_proxies) = db.get_all_proxies() {
-            let mut proxies_write = proxies.write().unwrap();
-            *proxies_write = initial_proxies;
-        }
-
-        Ok(Self { proxies, db })
-    }
-
-    async fn get_next_proxy(&self) -> Option<String> {
-        let proxies = self.proxies.read().unwrap();
-        proxies.choose(&mut thread_rng()).cloned()
-    }
-
-    async fn add_proxy(&self, proxy: String) -> Result<(), sled::Error> {
-        self.db.add_proxy(&proxy)?;
-        let mut proxies = self.proxies.write().unwrap();
-        proxies.push(proxy);
-        Ok(())
-    }
-
-    async fn get_all_proxies(&self) -> Vec<String> {
-        let proxies = self.proxies.read().unwrap();
-        proxies.clone()
-    }
-
-    async fn shuffle_proxies(&self) {
-        let mut proxies = self.proxies.write().unwrap();
-        proxies.shuffle(&mut thread_rng());
-    }
-}
-
-struct ProxyDatabase {
-    db: Db,
-}
-
-impl ProxyDatabase {
-    fn new() -> Result<Self, sled::Error> {
-        let db = sled::open(Path::new("proxy_db"))?;
-        Ok(Self { db })
-    }
-
-    fn add_proxy(&self, proxy: &str) -> Result<(), sled::Error> {
-        self.db.insert(proxy, &[])?;
-        self.db.flush()?;
-        Ok(())
-    }
-
-    fn get_all_proxies(&self) -> Result<Vec<String>, sled::Error> {
-        let proxies: Vec<String> = self
-            .db
-            .iter()
-            .filter_map(|item| {
-                item.ok()
-                    .map(|(key, _)| String::from_utf8_lossy(&key).into_owned())
-            })
-            .collect();
-        Ok(proxies)
-    }
-
-    fn remove_proxy(&self, proxy: &str) -> Result<(), sled::Error> {
-        self.db.remove(proxy)?;
-        self.db.flush()?;
-        Ok(())
-    }
-}
-
-static PROXY_MANAGER: Lazy<ProxyManager> = Lazy::new(|| ProxyManager::new().unwrap());
 static SPINNER_CLIENT: Lazy<cliclack::ProgressBar> = Lazy::new(|| cliclack::spinner());
 
 #[tokio::main]
