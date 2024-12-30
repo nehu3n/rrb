@@ -1,9 +1,11 @@
+mod tasks;
+
 use clap::Parser;
 use cliclack;
 use colored::Colorize;
 use crossterm::terminal;
 use serenity::{
-    all::{ClientBuilder, Context, EventHandler, GatewayIntents, OnlineStatus, Ready},
+    all::{ClientBuilder, Context, EventHandler, GatewayIntents, GuildId, OnlineStatus, Ready},
     async_trait,
 };
 
@@ -119,10 +121,12 @@ impl EventHandler for Handler {
             items.push((info.id.to_string(), info.name.clone(), String::new()));
         }
 
-        let selectedGuild = cliclack::select("Select a guild")
+        let selected_guild = cliclack::select("Select a guild")
             .items(&items)
             .interact()
             .unwrap();
+
+        let guild_id = GuildId::new(selected_guild.parse::<u64>().unwrap());
 
         loop {
             cliclack::clear_screen().unwrap();
@@ -138,8 +142,12 @@ impl EventHandler for Handler {
                     let name = cliclack::input("Enter channel name")
                         .interact::<String>()
                         .unwrap();
+
+                    tasks::create_channels(&name, &ctx, guild_id).await;
                 }
-                "delete_ch" => {}
+                "delete_ch" => {
+                    tasks::delete_channels(&ctx, guild_id).await;
+                }
                 "create_rl" => {
                     let name = cliclack::input("Enter role name")
                         .interact::<String>()
