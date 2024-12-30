@@ -18,50 +18,25 @@ struct Args {
     token: Option<String>,
 }
 
-fn center_text(text: &str) -> String {
-    let (width, _) = terminal::size().unwrap();
-    let text_width = text.lines().map(|line| line.len()).max().unwrap_or(0);
-
-    let padding = if (width as usize) > text_width {
-        ((width as usize) - text_width) / 2
-    } else {
-        0
-    };
-
-    text.lines()
-        .map(|line| format!("{:padding$}{}", "", line, padding = padding))
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
 fn banner() {
-    println!(
+    print!(
         "{}",
-        center_text(
-            r#"
+        r#"
   ____                  _               ____            _       _     ____            _   
  |  _ \   _   _   ___  | |_   _   _    |  _ \    __ _  (_)   __| |   | __ )    ___   | |_ 
  | |_) | | | | | / __| | __| | | | |   | |_) |  / _` | | |  / _` |   |  _ \   / _ \  | __|
  |  _ <  | |_| | \__ \ | |_  | |_| |   |  _ <  | (_| | | | | (_| |   | |_) | | (_) | | |_ 
  |_| \_\  \__,_| |___/  \__|  \__, |   |_| \_\  \__,_| |_|  \__,_|   |____/   \___/   \__|
                               |___/
-"#
-            .red()
-            .to_string()
-            .as_str()
-        )
+"#.red()
     );
 
     println!(
         "{}",
-        center_text(
-            r#"
+        r#"
 Made by Nehuén <https://github.com/nehu3n>
 "#
-            .magenta()
-            .to_string()
-            .as_str()
-        )
+        .magenta()
     );
 }
 
