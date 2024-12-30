@@ -1,10 +1,10 @@
-mod tasks;
 mod config;
+mod tasks;
+mod ui;
 
 use clap::Parser;
 use cliclack::{self};
 use colored::Colorize;
-use once_cell::sync::Lazy;
 use serenity::{
     all::{
         ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, HttpBuilder,
@@ -14,37 +14,13 @@ use serenity::{
 };
 
 use config::proxy::PROXY_MANAGER;
+use ui::{banner, SPINNER_CLIENT};
 
 #[derive(Parser)]
 struct Args {
     #[clap(short, long)]
     token: Option<String>,
 }
-
-fn banner() {
-    print!(
-        "{}",
-        r#"
-  ____                  _               ____            _       _     ____            _   
- |  _ \   _   _   ___  | |_   _   _    |  _ \    __ _  (_)   __| |   | __ )    ___   | |_ 
- | |_) | | | | | / __| | __| | | | |   | |_) |  / _` | | |  / _` |   |  _ \   / _ \  | __|
- |  _ <  | |_| | \__ \ | |_  | |_| |   |  _ <  | (_| | | | | (_| |   | |_) | | (_) | | |_ 
- |_| \_\  \__,_| |___/  \__|  \__, |   |_| \_\  \__,_| |_|  \__,_|   |____/   \___/   \__|
-                              |___/
-"#
-        .red()
-    );
-
-    println!(
-        "{}",
-        r#"
-Made by Nehuén <https://github.com/nehu3n>
-"#
-        .magenta()
-    );
-}
-
-static SPINNER_CLIENT: Lazy<cliclack::ProgressBar> = Lazy::new(|| cliclack::spinner());
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -264,7 +240,8 @@ impl EventHandler for Handler {
                     }
                 }
                 "exit" => {
-                    cliclack::outro(format!("Thank you for using! {}", "Exiting...".red())).unwrap();
+                    cliclack::outro(format!("Thank you for using! {}", "Exiting...".red()))
+                        .unwrap();
                     std::process::exit(0)
                 }
                 _ => {}
