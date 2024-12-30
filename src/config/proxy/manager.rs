@@ -4,6 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use super::db::ProxyDatabase;
 
+#[derive(Clone)]
 pub struct ProxyManager {
     proxies: Arc<RwLock<Vec<String>>>,
     db: Arc<ProxyDatabase>,
