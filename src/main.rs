@@ -27,7 +27,8 @@ fn banner() {
  |  _ <  | |_| | \__ \ | |_  | |_| |   |  _ <  | (_| | | | | (_| |   | |_) | | (_) | | |_ 
  |_| \_\  \__,_| |___/  \__|  \__, |   |_| \_\  \__,_| |_|  \__,_|   |____/   \___/   \__|
                               |___/
-"#.red()
+"#
+        .red()
     );
 
     println!(
@@ -109,55 +110,64 @@ impl EventHandler for Handler {
             cliclack::clear_screen().unwrap();
             banner();
 
-            let task = cliclack::select("Select a task")
-                .items(&TASKS)
+            let menu = cliclack::select("Menu")
+                .items(&[("tasks", "Tasks", ""), ("config", "Config", "")])
                 .interact()
                 .unwrap();
 
-            match task {
-                "create_ch" => {
-                    let name = cliclack::input("Enter channel name")
-                        .interact::<String>()
-                        .unwrap();
+            if menu == "config" {
+                // TODO: config
+            } else {
+                let task = cliclack::select("Select a task")
+                    .items(&TASKS)
+                    .interact()
+                    .unwrap();
 
-                    tasks::create_channels(&name, &ctx, guild_id).await;
-                }
-                "delete_ch" => {
-                    tasks::delete_channels(&ctx, guild_id).await;
-                }
-                "create_rl" => {
-                    let name = cliclack::input("Enter role name")
-                        .interact::<String>()
-                        .unwrap();
+                match task {
+                    "create_ch" => {
+                        let name = cliclack::input("Enter channel name")
+                            .interact::<String>()
+                            .unwrap();
 
-                    tasks::create_roles(&name, &ctx, guild_id).await;
-                }
-                "delete_rl" => {
-                    tasks::delete_roles(&ctx, guild_id).await;
-                }
-                "ban_all" => {
-                    tasks::ban_all(&ctx, guild_id).await;
-                }
-                "kick_all" => {
-                    tasks::kick_all(&ctx, guild_id).await;
-                }
-                "change_name" => {
-                    let name = cliclack::input("Enter guild name")
-                        .interact::<String>()
-                        .unwrap();
+                        tasks::create_channels(&name, &ctx, guild_id).await;
+                    }
+                    "delete_ch" => {
+                        tasks::delete_channels(&ctx, guild_id).await;
+                    }
+                    "create_rl" => {
+                        let name = cliclack::input("Enter role name")
+                            .interact::<String>()
+                            .unwrap();
 
-                    let guild_builder = EditGuild::new().name(name);
-                    guild_id.edit(&ctx.http, guild_builder).await.unwrap();
-                }
-                "spam_msg" => {
-                    let message = cliclack::input("Enter spam message")
-                        .multiline()
-                        .interact::<String>()
-                        .unwrap();
+                        tasks::create_roles(&name, &ctx, guild_id).await;
+                    }
+                    "delete_rl" => {
+                        tasks::delete_roles(&ctx, guild_id).await;
+                    }
+                    "ban_all" => {
+                        tasks::ban_all(&ctx, guild_id).await;
+                    }
+                    "kick_all" => {
+                        tasks::kick_all(&ctx, guild_id).await;
+                    }
+                    "change_name" => {
+                        let name = cliclack::input("Enter guild name")
+                            .interact::<String>()
+                            .unwrap();
 
-                    tasks::spam_message(&message, &ctx, guild_id).await;
+                        let guild_builder = EditGuild::new().name(name);
+                        guild_id.edit(&ctx.http, guild_builder).await.unwrap();
+                    }
+                    "spam_msg" => {
+                        let message = cliclack::input("Enter spam message")
+                            .multiline()
+                            .interact::<String>()
+                            .unwrap();
+
+                        tasks::spam_message(&message, &ctx, guild_id).await;
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
     }
