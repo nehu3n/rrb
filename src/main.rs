@@ -1,7 +1,7 @@
 mod tasks;
 
 use clap::Parser;
-use cliclack;
+use cliclack::{self};
 use colored::Colorize;
 use serenity::{
     all::{
@@ -120,6 +120,15 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _ready: Ready) {
+        ctx.set_presence(None, OnlineStatus::Offline);
+
+        cliclack::log::success(format!(
+            "{} {}",
+            "Logged in as".green(),
+            ctx.cache.current_user().name
+        ))
+        .unwrap();
+
         let guilds = ctx.cache.guilds();
         let mut items: Vec<(String, String, String)> = Vec::new();
 
@@ -138,6 +147,13 @@ impl EventHandler for Handler {
         loop {
             cliclack::clear_screen().unwrap();
             banner();
+
+            cliclack::log::success(format!(
+                "{} {}",
+                "Logged in as".green(),
+                ctx.cache.current_user().name
+            ))
+            .unwrap();
 
             let menu = cliclack::select("Menu")
                 .items(&[("tasks", "Tasks", ""), ("config", "Config", "")])
