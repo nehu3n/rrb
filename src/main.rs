@@ -10,6 +10,7 @@ use serenity::{
     },
     async_trait,
 };
+use std::sync::{Arc, RwLock};
 
 #[derive(Parser)]
 struct Args {
@@ -38,6 +39,34 @@ Made by Nehuén <https://github.com/nehu3n>
 "#
         .magenta()
     );
+}
+
+struct ProxyManager {
+    proxies: Arc<RwLock<Vec<String>>>,
+}
+
+impl ProxyManager {
+    fn new() -> Self {
+        Self {
+            proxies: Arc::new(RwLock::new(Vec::new())),
+        }
+    }
+
+    async fn get_next_proxy(&self) -> Option<String> {
+        let mut proxies = self.proxies.write().unwrap();
+        if proxies.is_empty() {
+            None
+        } else {
+            let proxy = proxies.remove(0);
+            proxies.push(proxy.clone());
+            Some(proxy)
+        }
+    }
+
+    async fn update_proxies(&self, new_proxies: Vec<String>) {
+        let mut proxies = self.proxies.write().unwrap();
+        *proxies = new_proxies;
+    }
 }
 
 #[tokio::main]
