@@ -223,118 +223,131 @@ impl EventHandler for Handler {
             .unwrap();
 
             let menu = cliclack::select("Menu")
-                .items(&[("tasks", "Tasks", ""), ("config", "Config", "")])
+                .items(&[
+                    ("tasks", "Tasks", ""),
+                    ("config", "Config", ""),
+                    ("exit", "Exit", ""),
+                ])
                 .interact()
                 .unwrap();
 
-            if menu == "config" {
-                let config_option = cliclack::select("Config")
-                    .items(&[("proxies", "Proxies", ""), ("tokens", "Tokens", "")])
-                    .interact()
-                    .unwrap();
+            match menu {
+                "config" => {
+                    let config_option = cliclack::select("Config")
+                        .items(&[("proxies", "Proxies", ""), ("tokens", "Tokens", "")])
+                        .interact()
+                        .unwrap();
 
-                match config_option {
-                    "proxies" => {
-                        let proxy_action = cliclack::select("Proxy Management")
-                            .items(&[("view", "View proxies", ""), ("add", "Add proxy", "")])
-                            .interact()
-                            .unwrap();
+                    match config_option {
+                        "proxies" => {
+                            let proxy_action = cliclack::select("Proxy Management")
+                                .items(&[("view", "View proxies", ""), ("add", "Add proxy", "")])
+                                .interact()
+                                .unwrap();
 
-                        fn add_proxy(
-                        ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
-                        {
-                            Box::pin(async {
-                                let new_proxy = cliclack::input("Enter new proxy")
-                                    .interact::<String>()
-                                    .unwrap();
+                            fn add_proxy(
+                            ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>
+                            {
+                                Box::pin(async {
+                                    let new_proxy = cliclack::input("Enter new proxy")
+                                        .interact::<String>()
+                                        .unwrap();
 
-                                PROXY_MANAGER.add_proxy(new_proxy).await.unwrap();
+                                    PROXY_MANAGER.add_proxy(new_proxy).await.unwrap();
 
-                                cliclack::log::success("Proxy added successfully!").unwrap();
-                                let back = cliclack::confirm("Back to menu?").interact().unwrap();
+                                    cliclack::log::success("Proxy added successfully!").unwrap();
+                                    let back =
+                                        cliclack::confirm("Back to menu?").interact().unwrap();
 
-                                if !back {
-                                    let other_proxy =
-                                        cliclack::confirm("Do you want to add another proxy?")
-                                            .interact()
-                                            .unwrap();
-                                    if other_proxy {
-                                        add_proxy().await;
+                                    if !back {
+                                        let other_proxy =
+                                            cliclack::confirm("Do you want to add another proxy?")
+                                                .interact()
+                                                .unwrap();
+                                        if other_proxy {
+                                            add_proxy().await;
+                                        }
                                     }
-                                }
-                            })
-                        }
-
-                        match proxy_action {
-                            "view" => {
-                                let proxies = PROXY_MANAGER.get_all_proxies().await;
-
-                                for proxy in proxies {
-                                    cliclack::log::info(proxy.bold()).unwrap();
-                                }
-
-                                cliclack::confirm("Back to menu?").interact().unwrap();
+                                })
                             }
-                            "add" => add_proxy().await,
-                            _ => {}
+
+                            match proxy_action {
+                                "view" => {
+                                    let proxies = PROXY_MANAGER.get_all_proxies().await;
+
+                                    for proxy in proxies {
+                                        cliclack::log::info(proxy.bold()).unwrap();
+                                    }
+
+                                    cliclack::confirm("Back to menu?").interact().unwrap();
+                                }
+                                "add" => add_proxy().await,
+                                _ => {}
+                            }
                         }
+                        "tokens" => {
+                            // TODO: tokens
+                        }
+                        _ => {}
                     }
-                    "tokens" => {
-                        // TODO: tokens
-                    }
-                    _ => {}
                 }
-            } else {
-                let task = cliclack::select("Select a task")
-                    .items(&TASKS)
-                    .interact()
-                    .unwrap();
+                "tasks" => {
+                    let task = cliclack::select("Select a task")
+                        .items(&TASKS)
+                        .interact()
+                        .unwrap();
 
-                match task {
-                    "create_ch" => {
-                        let name = cliclack::input("Enter channel name")
-                            .interact::<String>()
-                            .unwrap();
+                    match task {
+                        "create_ch" => {
+                            let name = cliclack::input("Enter channel name")
+                                .interact::<String>()
+                                .unwrap();
 
-                        tasks::create_channels(&name, &ctx, guild_id).await;
-                    }
-                    "delete_ch" => {
-                        tasks::delete_channels(&ctx, guild_id).await;
-                    }
-                    "create_rl" => {
-                        let name = cliclack::input("Enter role name")
-                            .interact::<String>()
-                            .unwrap();
+                            tasks::create_channels(&name, &ctx, guild_id).await;
+                        }
+                        "delete_ch" => {
+                            tasks::delete_channels(&ctx, guild_id).await;
+                        }
+                        "create_rl" => {
+                            let name = cliclack::input("Enter role name")
+                                .interact::<String>()
+                                .unwrap();
 
-                        tasks::create_roles(&name, &ctx, guild_id).await;
-                    }
-                    "delete_rl" => {
-                        tasks::delete_roles(&ctx, guild_id).await;
-                    }
-                    "ban_all" => {
-                        tasks::ban_all(&ctx, guild_id).await;
-                    }
-                    "kick_all" => {
-                        tasks::kick_all(&ctx, guild_id).await;
-                    }
-                    "change_name" => {
-                        let name = cliclack::input("Enter guild name")
-                            .interact::<String>()
-                            .unwrap();
+                            tasks::create_roles(&name, &ctx, guild_id).await;
+                        }
+                        "delete_rl" => {
+                            tasks::delete_roles(&ctx, guild_id).await;
+                        }
+                        "ban_all" => {
+                            tasks::ban_all(&ctx, guild_id).await;
+                        }
+                        "kick_all" => {
+                            tasks::kick_all(&ctx, guild_id).await;
+                        }
+                        "change_name" => {
+                            let name = cliclack::input("Enter guild name")
+                                .interact::<String>()
+                                .unwrap();
 
-                        let guild_builder = EditGuild::new().name(name);
-                        guild_id.edit(&ctx.http, guild_builder).await.unwrap();
-                    }
-                    "spam_msg" => {
-                        let message = cliclack::input("Enter spam message")
-                            .multiline()
-                            .interact::<String>()
-                            .unwrap();
+                            let guild_builder = EditGuild::new().name(name);
+                            guild_id.edit(&ctx.http, guild_builder).await.unwrap();
+                        }
+                        "spam_msg" => {
+                            let message = cliclack::input("Enter spam message")
+                                .multiline()
+                                .interact::<String>()
+                                .unwrap();
 
-                        tasks::spam_message(&message, &ctx, guild_id).await;
+                            tasks::spam_message(&message, &ctx, guild_id).await;
+                        }
+                        _ => {}
                     }
-                    _ => {}
                 }
+                "exit" => {
+                    cliclack::outro(format!("Thank you for using! {}", "Exiting...".red())).unwrap();
+                    std::process::exit(0)
+                }
+                _ => {}
             }
         }
     }
