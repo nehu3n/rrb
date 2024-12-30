@@ -45,6 +45,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+const TASKS: [(&str, &str, &str); 8] = [
+    ("create_ch", "Create channels", ""),
+    ("delete_ch", "Delete all channels", ""),
+    ("create_rl", "Create roles", ""),
+    ("delete_rl", "Delete all roles", ""),
+    ("ban_all", "Ban all", ""),
+    ("kick_all", "Kick all", ""),
+    ("change_name", "Change guild name", ""),
+    ("spam_msg", "Spam message", ""),
+];
+
 struct Handler;
 
 #[async_trait]
@@ -57,16 +68,50 @@ impl EventHandler for Handler {
 
         for guild in guilds {
             let info = ctx.http.get_guild(guild).await.unwrap();
-            items.push((
-                info.id.to_string(),
-                info.name.clone(),
-                String::new(),
-            ));
+            items.push((info.id.to_string(), info.name.clone(), String::new()));
         }
 
-        cliclack::select("Select a guild")
+        let selectedGuild = cliclack::select("Select a guild")
             .items(&items)
             .interact()
             .unwrap();
+
+        loop {
+            cliclack::clear_screen().unwrap();
+
+            let task = cliclack::select("Select a task")
+                .items(&TASKS)
+                .interact()
+                .unwrap();
+
+            match task {
+                "create_ch" => {
+                    let name = cliclack::input("Enter channel name")
+                        .interact::<String>()
+                        .unwrap();
+                }
+                "delete_ch" => {}
+                "create_rl" => {
+                    let name = cliclack::input("Enter role name")
+                        .interact::<String>()
+                        .unwrap();
+                }
+                "delete_rl" => {}
+                "ban_all" => {}
+                "kick_all" => {}
+                "change_name" => {
+                    let name = cliclack::input("Enter guild name")
+                        .interact::<String>()
+                        .unwrap();
+                }
+                "spam_msg" => {
+                    let name = cliclack::input("Enter spam message")
+                        .multiline()
+                        .interact::<String>()
+                        .unwrap();
+                }
+                _ => {}
+            }
+        }
     }
 }
