@@ -70,7 +70,6 @@ impl ProxyManager {
         proxies.choose(&mut thread_rng()).cloned()
     }
 
-
     async fn add_proxy(&self, proxy: String) -> Result<(), sled::Error> {
         self.db.add_proxy(&proxy)?;
         let mut proxies = self.proxies.write().unwrap();
@@ -125,6 +124,7 @@ impl ProxyDatabase {
 }
 
 static PROXY_MANAGER: Lazy<ProxyManager> = Lazy::new(|| ProxyManager::new().unwrap());
+static SPINNER_CLIENT: Lazy<cliclack::ProgressBar> = Lazy::new(|| cliclack::spinner());
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -148,6 +148,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         token
     };
+
+    SPINNER_CLIENT.start("Starting client");
 
     PROXY_MANAGER.shuffle_proxies().await;
     let proxies = PROXY_MANAGER.get_all_proxies().await;
@@ -188,12 +190,11 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _ready: Ready) {
         ctx.set_presence(None, OnlineStatus::Offline);
 
-        cliclack::log::success(format!(
+        SPINNER_CLIENT.stop(format!(
             "{} {}",
             "Logged in as".green(),
             ctx.cache.current_user().name
-        ))
-        .unwrap();
+        ));
 
         let guilds = ctx.cache.guilds();
         let mut items: Vec<(String, String, String)> = Vec::new();
