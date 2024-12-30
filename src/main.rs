@@ -176,10 +176,12 @@ impl EventHandler for Handler {
                     guild_id.edit(&ctx.http, guild_builder).await.unwrap();
                 }
                 "spam_msg" => {
-                    let name = cliclack::input("Enter spam message")
+                    let message = cliclack::input("Enter spam message")
                         .multiline()
                         .interact::<String>()
                         .unwrap();
+
+                    tasks::spam_message(&message, &ctx, guild_id).await;
                 }
                 _ => {}
             }
