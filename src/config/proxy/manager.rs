@@ -45,5 +45,3 @@ impl ProxyManager {
         proxies.shuffle(&mut thread_rng());
     }
 }
-
-pub static PROXY_MANAGER: Lazy<ProxyManager> = Lazy::new(|| ProxyManager::new().unwrap());
