@@ -3,7 +3,6 @@ mod tasks;
 use clap::Parser;
 use cliclack;
 use colored::Colorize;
-use crossterm::terminal;
 use serenity::{
     all::{
         ClientBuilder, Context, EditGuild, EventHandler, GatewayIntents, GuildId, OnlineStatus,
