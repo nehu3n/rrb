@@ -28,6 +28,13 @@ impl Menu {
             spawn_blocking(|| clear_screen()).await??;
             banner();
 
+            let ctx_cache = ctx.cache.clone();
+            spawn_blocking(move || {
+                let app_user = ctx_cache.current_user();
+                success(format!("{} {}", "Logged in as".green(), app_user.name))
+            })
+            .await??;
+
             let menu_items = [
                 ("tasks", "Tasks", ""),
                 ("config", "Config", ""),
